@@ -13,15 +13,20 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python & FFmpeg
+      - name: Set up Python & Node.js
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       - name: Install yt-dlp and ffmpeg
         run: |
           sudo apt-get update && sudo apt-get install -y ffmpeg
-          pip install -U yt-dlp
+          pip install -U "yt-dlp[default]"
 
       - name: Write cookies file
         run: |
@@ -35,9 +40,10 @@ jobs:
           mkdir -p playlist_1
           yt-dlp \
             --cookies cookies.txt \
+            --ignore-errors \
             --playlist-start 1 \
             --playlist-end 13 \
-            -f "bv*[height<=360]+ba/b[height<=360]" \
+            -f "bv*[height<=360]+ba/b[height<=360]/bv*+ba/b" \
             --merge-output-format mp4 \
             --postprocessor-args "ffmpeg:-r 15 -c:v libx264 -crf 25 -preset fast -c:a aac -b:a 96k" \
             -o "playlist_1/%(playlist_index)02d - %(title).80s.%(ext)s" \
