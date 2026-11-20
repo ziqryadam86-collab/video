@@ -1,5 +1,3 @@
-mkdir -p .github/workflows
-cat << 'EOF' > .github/workflows/download-playlist-1.yml
 name: Download Playlist 1 (360p 15fps)
 
 on:
@@ -60,4 +58,4 @@ jobs:
             git commit -m "Add playlist 1 videos (360p 15fps)"
             git push
           fi
-EOF
+          
