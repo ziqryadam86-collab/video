@@ -1,0 +1,63 @@
+mkdir -p .github/workflows
+cat << 'EOF' > .github/workflows/download-playlist-1.yml
+name: Download Playlist 1 (360p 15fps)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python & FFmpeg
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install yt-dlp and ffmpeg
+        run: |
+          sudo apt-get update && sudo apt-get install -y ffmpeg
+          pip install -U yt-dlp
+
+      - name: Write cookies file
+        run: |
+          cat << 'COOKIES_EOF' > cookies.txt
+          ${{ secrets.YT_COOKIES }}
+          COOKIES_EOF
+          chmod 600 cookies.txt
+
+      - name: Download first 13 videos to playlist_1 at 360p 15fps
+        run: |
+          mkdir -p playlist_1
+          yt-dlp \
+            --cookies cookies.txt \
+            --playlist-start 1 \
+            --playlist-end 13 \
+            -f "bv*[height<=360]+ba/b[height<=360]" \
+            --merge-output-format mp4 \
+            --postprocessor-args "ffmpeg:-r 15 -c:v libx264 -crf 25 -preset fast -c:a aac -b:a 96k" \
+            -o "playlist_1/%(playlist_index)02d - %(title).80s.%(ext)s" \
+            "https://youtube.com/playlist?list=PLLQoIst01CaXmNIKtR6DiV4Slx6Mt5vRk&si=_SIWXKOC-gDbIQzB"
+
+      - name: Remove temporary cookies file
+        if: always()
+        run: rm -f cookies.txt
+
+      - name: Commit and push playlist_1
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add playlist_1
+          if git diff --staged --quiet; then
+            echo "No new files to commit."
+          else
+            git commit -m "Add playlist 1 videos (360p 15fps)"
+            git push
+          fi
+EOF
